@@ -1,0 +1,987 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>신입사원 PPT 심사 시스템</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --primary: #1a3a5c;
+  --primary-light: #245080;
+  --accent: #e8a020;
+  --gold: #FFD700; --silver: #C0C0C0; --bronze: #CD7F32;
+  --success: #27ae60; --danger: #e74c3c;
+  --bg: #f0f2f7; --text: #2c3e50; --text-sub: #7f8c8d;
+  --border: #dde1e8; --sel-bg: #fff8ec;
+}
+body { font-family: 'Malgun Gothic','Apple SD Gothic Neo',-apple-system,sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
+
+/* ─ HEADER ─ */
+.app-header { background:var(--primary); color:white; padding:14px 24px; display:flex; justify-content:space-between; align-items:center; position:sticky; top:0; z-index:200; box-shadow:0 2px 10px rgba(0,0,0,.25); }
+.app-header h1 { font-size:1.1rem; font-weight:700; }
+.hdr-right { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+.countdown-badge { background:rgba(255,255,255,.18); padding:4px 12px; border-radius:20px; font-size:.82rem; font-weight:600; }
+.btn-hdr { padding:5px 12px; border-radius:6px; border:1.5px solid rgba(255,255,255,.4); background:transparent; color:white; font-size:.8rem; font-weight:600; cursor:pointer; font-family:inherit; transition:background .2s; }
+.btn-hdr:hover { background:rgba(255,255,255,.15); }
+.btn-hdr.solid { background:var(--accent); border-color:var(--accent); }
+
+/* ─ VIEWS ─ */
+.view { display:none; }
+.view.active { display:block; }
+
+/* ─ BUTTONS ─ */
+.btn { padding:12px 24px; border:none; border-radius:8px; font-size:.95rem; font-weight:600; cursor:pointer; transition:all .2s; font-family:inherit; }
+.btn:disabled { opacity:.4; cursor:not-allowed; transform:none !important; }
+.btn-primary { background:var(--primary); color:white; }
+.btn-primary:hover:not(:disabled) { background:var(--primary-light); transform:translateY(-1px); }
+.btn-accent { background:var(--accent); color:white; }
+.btn-accent:hover:not(:disabled) { background:#d09010; }
+.btn-ghost { background:transparent; color:var(--primary); border:2px solid var(--primary); }
+.btn-ghost:hover { background:var(--primary); color:white; }
+.btn-danger { background:var(--danger); color:white; }
+.btn-danger:hover { background:#c0392b; }
+.btn-sm { padding:7px 14px; font-size:.83rem; }
+.btn-full { width:100%; }
+
+/* ─ LANDING ─ */
+.landing-wrap { max-width:560px; margin:70px auto; text-align:center; padding:24px; }
+.landing-icon { font-size:3.5rem; margin-bottom:16px; }
+.landing-wrap h2 { font-size:2rem; color:var(--primary); margin-bottom:8px; }
+.landing-desc { color:var(--text-sub); margin-bottom:6px; font-size:1rem; }
+.landing-deadline { font-size:.9rem; color:#e67e22; font-weight:600; margin:4px 0 36px; }
+.landing-btns { display:flex; flex-direction:column; gap:10px; max-width:280px; margin:0 auto 24px; }
+
+/* ─ FORM CARD ─ */
+.form-card { background:white; border-radius:14px; padding:32px; box-shadow:0 4px 24px rgba(0,0,0,.08); max-width:460px; margin:60px auto; }
+.form-card h2 { text-align:center; margin-bottom:24px; color:var(--primary); font-size:1.45rem; }
+.fg { margin-bottom:16px; }
+.fg label { display:block; margin-bottom:6px; font-weight:600; font-size:.88rem; }
+.fg input, .fg select, .fg textarea {
+  width:100%; padding:10px 14px;
+  border:1.5px solid var(--border); border-radius:8px;
+  font-size:.95rem; font-family:inherit; transition:border-color .2s; background:white;
+}
+.fg input:focus, .fg select:focus, .fg textarea:focus { outline:none; border-color:var(--primary); }
+
+/* ─ ALERTS ─ */
+.alert { padding:11px 15px; border-radius:8px; margin-bottom:14px; font-size:.88rem; line-height:1.5; }
+.alert-error { background:#fdf0f0; border:1px solid #e74c3c; color:#c0392b; }
+.alert-success { background:#f0faf4; border:1px solid #27ae60; color:#1e8449; }
+.alert-info { background:#eaf3fb; border:1px solid #85c1e9; color:#1a5276; }
+.alert-warning { background:#fef9e7; border:1px solid #f4d03f; color:#7d6608; }
+.info-box { background:#eaf3fb; border:1px solid #85c1e9; border-radius:8px; padding:11px 14px; font-size:.85rem; color:#1a5276; margin-bottom:18px; line-height:1.7; }
+
+/* ─ ADMIN ─ */
+.admin-wrap { max-width:1100px; margin:0 auto; padding:24px; }
+.admin-topbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:10px; }
+.admin-topbar h2 { color:var(--primary); font-size:1.3rem; }
+.admin-tabs { display:flex; gap:4px; background:#e0e4ec; border-radius:10px; padding:4px; margin-bottom:24px; flex-wrap:wrap; }
+.admin-tab { flex:1; min-width:90px; padding:8px 12px; border:none; border-radius:7px; background:transparent; cursor:pointer; font-family:inherit; font-weight:600; font-size:.82rem; transition:all .2s; color:var(--text-sub); }
+.admin-tab.active { background:white; color:var(--primary); box-shadow:0 2px 6px rgba(0,0,0,.1); }
+.section-box { background:white; border-radius:12px; padding:24px; box-shadow:0 2px 8px rgba(0,0,0,.05); }
+.section-box + .section-box { margin-top:16px; }
+
+/* GAS 설치 가이드 */
+.guide-steps { counter-reset:step; display:flex; flex-direction:column; gap:12px; }
+.guide-step { display:flex; gap:14px; align-items:flex-start; }
+.guide-step-num { counter-increment:step; width:28px; height:28px; min-width:28px; border-radius:50%; background:var(--primary); color:white; font-weight:700; font-size:.85rem; display:flex; align-items:center; justify-content:center; margin-top:1px; }
+.guide-step-num::after { content:counter(step); }
+.guide-step-body { font-size:.88rem; line-height:1.7; color:var(--text); }
+.guide-step-body strong { color:var(--primary); }
+.guide-step-body code { background:#f0f2f7; border:1px solid #dde1e8; border-radius:4px; padding:1px 6px; font-size:.85rem; font-family:monospace; }
+.conn-status { display:inline-flex; align-items:center; gap:6px; padding:4px 12px; border-radius:20px; font-size:.82rem; font-weight:600; }
+.conn-status.ok { background:#f0faf4; color:var(--success); border:1px solid #a9dfbf; }
+.conn-status.fail { background:#fdf0f0; color:var(--danger); border:1px solid #f1948a; }
+.conn-status.none { background:#f5f5f5; color:#aaa; border:1px solid #ddd; }
+
+/* PPT Entry Table */
+.entry-table { background:white; border-radius:12px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,.05); }
+.entry-row { display:grid; grid-template-columns:44px 1fr 130px 2fr; gap:8px; padding:8px 14px; border-bottom:1px solid #f0f2f7; align-items:center; }
+.entry-row.hdr { background:var(--primary); color:white; font-weight:700; font-size:.82rem; }
+.entry-row input { border:1px solid var(--border); border-radius:6px; padding:6px 9px; font-size:.83rem; font-family:inherit; width:100%; }
+.entry-row input:focus { outline:none; border-color:var(--primary); }
+.entry-scroll { max-height:540px; overflow-y:auto; }
+.save-ok { font-size:.82rem; color:var(--success); font-weight:600; opacity:0; transition:opacity .3s; margin-left:8px; }
+.save-ok.show { opacity:1; }
+
+/* Voter table */
+.voter-row { display:grid; grid-template-columns:1fr 2fr 110px; gap:10px; padding:10px 16px; border-bottom:1px solid #f0f2f7; font-size:.88rem; align-items:center; }
+.voter-row.hdr { background:var(--primary); color:white; font-weight:700; font-size:.82rem; }
+
+/* Stats */
+.stat-row { display:flex; gap:14px; flex-wrap:wrap; margin-bottom:20px; }
+.stat-box { background:white; border-radius:10px; padding:16px 22px; flex:1; min-width:130px; box-shadow:0 2px 8px rgba(0,0,0,.05); text-align:center; }
+.stat-val { font-size:2rem; font-weight:700; color:var(--primary); }
+.stat-lbl { font-size:.78rem; color:var(--text-sub); margin-top:2px; }
+
+/* ─ VOTING ─ */
+.voting-wrap { max-width:1280px; margin:0 auto; padding:20px 20px 130px; }
+.vote-topbar { display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:20px; flex-wrap:wrap; gap:10px; }
+.vote-topbar h3 { font-size:1.15rem; color:var(--primary); font-weight:700; }
+.vote-topbar p { font-size:.83rem; color:var(--text-sub); margin-top:2px; }
+.voter-badge { background:var(--primary); color:white; padding:6px 16px; border-radius:20px; font-size:.85rem; font-weight:600; }
+.voting-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(195px,1fr)); gap:14px; }
+.ppt-card { background:white; border-radius:12px; padding:16px; box-shadow:0 2px 8px rgba(0,0,0,.06); cursor:pointer; transition:all .2s; border:2.5px solid transparent; position:relative; user-select:none; }
+.ppt-card:hover { box-shadow:0 6px 20px rgba(0,0,0,.12); transform:translateY(-2px); }
+.ppt-card.selected { border-color:var(--accent); background:var(--sel-bg); }
+.ppt-card.dimmed { opacity:.35; pointer-events:none; }
+.card-num { font-size:.72rem; color:var(--text-sub); font-weight:600; margin-bottom:5px; }
+.card-title { font-size:.92rem; font-weight:700; line-height:1.35; min-height:2.5em; margin-bottom:4px; }
+.card-submitter { font-size:.78rem; color:var(--text-sub); margin-bottom:14px; min-height:1.2em; }
+.card-actions { display:flex; gap:6px; pointer-events:none; }
+.card-preview-btn { flex:1; padding:6px; border:1.5px solid var(--border); background:white; border-radius:7px; font-size:.78rem; cursor:pointer; font-family:inherit; font-weight:600; color:var(--primary); transition:all .2s; pointer-events:all; }
+.card-preview-btn:hover { background:var(--bg); border-color:var(--primary); }
+.card-check { position:absolute; top:11px; right:11px; width:26px; height:26px; border-radius:50%; border:2px solid var(--border); background:white; display:none; align-items:center; justify-content:center; font-size:.85rem; }
+.ppt-card.selected .card-check { background:var(--accent); border-color:var(--accent); color:white; display:flex; }
+
+/* ─ VOTE BAR ─ */
+.vote-bar { position:fixed; bottom:0; left:0; right:0; background:white; border-top:2px solid var(--border); padding:12px 24px; display:flex; justify-content:space-between; align-items:center; box-shadow:0 -4px 20px rgba(0,0,0,.1); z-index:150; flex-wrap:wrap; gap:10px; }
+.vote-dots { display:flex; gap:8px; align-items:center; }
+.vote-dot { width:38px; height:38px; border-radius:50%; border:2.5px solid var(--border); background:white; display:flex; align-items:center; justify-content:center; font-size:.75rem; font-weight:700; transition:all .3s; }
+.vote-dot.filled { border-color:var(--accent); background:var(--accent); color:white; }
+.vote-txt { font-size:.88rem; color:var(--text-sub); margin-left:4px; }
+.vote-txt strong { font-size:1.05rem; color:var(--text); }
+.vote-err { color:var(--danger); font-size:.83rem; font-weight:600; }
+
+/* ─ MODAL ─ */
+.modal-bg { display:none; position:fixed; inset:0; background:rgba(0,0,0,.75); z-index:1000; align-items:center; justify-content:center; padding:16px; }
+.modal-bg.active { display:flex; }
+.modal-box { background:white; border-radius:14px; width:100%; max-width:920px; max-height:92vh; display:flex; flex-direction:column; overflow:hidden; }
+.modal-hdr { padding:14px 18px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; }
+.modal-hdr h3 { color:var(--primary); font-size:1rem; }
+.modal-close { background:none; border:none; font-size:1.4rem; cursor:pointer; color:var(--text-sub); }
+.modal-iframe-wrap { flex:1; overflow:auto; }
+.modal-iframe-wrap iframe { width:100%; height:580px; border:none; display:block; }
+.modal-ftr { padding:12px 18px; border-top:1px solid var(--border); display:flex; gap:8px; justify-content:flex-end; }
+
+/* ─ THANK YOU ─ */
+.ty-card { max-width:460px; margin:60px auto; text-align:center; background:white; border-radius:16px; padding:44px 32px; box-shadow:0 8px 32px rgba(0,0,0,.1); }
+.ty-icon { font-size:3.5rem; margin-bottom:14px; }
+.ty-card h2 { font-size:1.7rem; color:var(--primary); margin-bottom:6px; }
+.pick-list { display:flex; flex-direction:column; gap:8px; margin:16px 0; text-align:left; }
+.pick-item { background:var(--sel-bg); border:1.5px solid var(--accent); border-radius:8px; padding:10px 16px; font-weight:600; font-size:.9rem; }
+
+/* ─ RESULTS ─ */
+.results-wrap { max-width:920px; margin:0 auto; padding:24px 24px 40px; }
+.results-topbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:8px; }
+.results-topbar h2 { font-size:1.35rem; color:var(--primary); font-weight:700; }
+.podium-grid { display:grid; grid-template-columns:1fr 1.15fr 1fr; gap:14px; margin-bottom:28px; }
+.podium-card { background:white; border-radius:12px; padding:20px 16px; text-align:center; box-shadow:0 4px 16px rgba(0,0,0,.07); border-top:4px solid var(--border); }
+.podium-card.gold { border-top-color:var(--gold); }
+.podium-card.silver { border-top-color:var(--silver); }
+.podium-card.bronze { border-top-color:var(--bronze); }
+.podium-medal { font-size:2rem; margin-bottom:6px; }
+.podium-num { font-size:.72rem; color:var(--text-sub); margin-bottom:2px; }
+.podium-title { font-weight:700; font-size:.95rem; line-height:1.3; }
+.podium-sub { font-size:.78rem; color:var(--text-sub); margin-top:3px; }
+.podium-votes { font-size:1.6rem; font-weight:700; color:var(--primary); margin-top:12px; }
+.podium-votes span { font-size:.82rem; font-weight:400; color:var(--text-sub); }
+.rank-list { background:white; border-radius:12px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,.05); }
+.rank-item { display:grid; grid-template-columns:52px 1fr auto; align-items:center; padding:13px 16px; border-bottom:1px solid #f0f2f7; gap:12px; }
+.rank-item:last-child { border-bottom:none; }
+.rank-num { font-weight:700; font-size:1.05rem; color:var(--text-sub); text-align:center; }
+.rank-title { font-weight:600; font-size:.9rem; margin-bottom:5px; }
+.rank-bar-bg { height:8px; background:#e8ecf2; border-radius:4px; overflow:hidden; }
+.rank-bar-fill { height:100%; background:var(--primary); border-radius:4px; transition:width .8s ease; }
+.rank-votes { font-weight:700; color:var(--primary); font-size:1rem; white-space:nowrap; }
+
+/* ─ LOADING OVERLAY ─ */
+.loading-overlay { position:fixed; inset:0; background:rgba(255,255,255,.82); z-index:500; display:none; align-items:center; justify-content:center; flex-direction:column; gap:14px; }
+.loading-overlay.active { display:flex; }
+.spinner { width:44px; height:44px; border:4px solid #e0e4ec; border-top-color:var(--primary); border-radius:50%; animation:spin .8s linear infinite; }
+@keyframes spin { to { transform:rotate(360deg); } }
+.loading-txt { font-size:.95rem; color:var(--text-sub); font-weight:600; }
+
+/* ─ UTIL ─ */
+.hidden { display:none !important; }
+.section-title { font-size:1.1rem; font-weight:700; color:var(--primary); margin-bottom:14px; }
+.mt-8 { margin-top:8px; }
+.mt-16 { margin-top:16px; }
+
+@media (max-width:700px) {
+  .podium-grid { grid-template-columns:1fr; }
+  .voting-grid { grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); }
+  .entry-row { grid-template-columns:36px 1fr 100px; }
+  .entry-row .url-col { display:none; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ LOADING ═══ -->
+<div class="loading-overlay" id="loading-overlay">
+  <div class="spinner"></div>
+  <div class="loading-txt" id="loading-txt">잠시만요...</div>
+</div>
+
+<!-- ═══ HEADER ═══ -->
+<div id="app-header" class="app-header hidden">
+  <h1 id="header-title">신입사원 PPT 심사</h1>
+  <div class="hdr-right">
+    <span id="hdr-countdown" class="countdown-badge hidden"></span>
+    <button class="btn-hdr solid" onclick="showResults()">🏆 결과</button>
+    <button class="btn-hdr" onclick="showLanding()">홈</button>
+  </div>
+</div>
+
+<!-- ═══ LANDING ═══ -->
+<div id="view-landing" class="view active">
+  <div class="landing-wrap">
+    <div class="landing-icon">🏆</div>
+    <h2 id="landing-title">신입사원 PPT 심사</h2>
+    <p class="landing-desc">신입사원 교육 결과물 중 우수 작품 3편을 선정합니다.</p>
+    <p class="landing-deadline" id="landing-deadline"></p>
+    <div class="landing-btns">
+      <button class="btn btn-primary" id="btn-go-vote" onclick="goVote()">📋 투표하기</button>
+      <button class="btn btn-ghost" onclick="showResults()">🏆 결과 보기</button>
+      <button class="btn" style="background:transparent;border:1.5px solid #ccc;color:#999;font-size:.82rem;" onclick="showAdminLogin()">⚙️ 관리자</button>
+    </div>
+    <div id="landing-not-setup" class="alert alert-info" style="max-width:380px;margin:0 auto;">
+      ⚠️ 아직 설정이 완료되지 않았습니다. 관리자 메뉴에서 먼저 설정해주세요.
+    </div>
+    <div id="landing-already-voted" class="alert alert-success hidden" style="max-width:380px;margin:8px auto 0;"></div>
+    <div id="landing-closed" class="alert alert-warning hidden" style="max-width:380px;margin:8px auto 0;">⏰ 투표 기간이 종료되었습니다.</div>
+  </div>
+</div>
+
+<!-- ═══ ADMIN LOGIN ═══ -->
+<div id="view-admin-login" class="view">
+  <div class="form-card">
+    <h2>🔑 관리자 로그인</h2>
+    <div id="admin-login-err" class="alert alert-error hidden"></div>
+    <div class="fg">
+      <label>비밀번호</label>
+      <input type="password" id="admin-pw-input" placeholder="비밀번호 입력" onkeydown="if(event.key==='Enter')adminLogin()">
+    </div>
+    <button class="btn btn-primary btn-full mt-8" onclick="adminLogin()">로그인</button>
+    <p style="text-align:center;margin-top:10px;font-size:.78rem;color:#aaa;">초기 비밀번호: <strong>admin1234</strong></p>
+    <button class="btn btn-ghost btn-sm btn-full mt-8" onclick="showLanding()">← 돌아가기</button>
+  </div>
+</div>
+
+<!-- ═══ ADMIN PANEL ═══ -->
+<div id="view-admin" class="view">
+  <div class="admin-wrap">
+    <div class="admin-topbar">
+      <h2>⚙️ 관리자 패널</h2>
+      <button class="btn btn-ghost btn-sm" onclick="showLanding()">← 홈으로</button>
+    </div>
+    <div class="admin-tabs">
+      <button class="admin-tab active" onclick="aTab(this,'at-gs')">🔗 구글 시트 연동</button>
+      <button class="admin-tab" onclick="aTab(this,'at-setup')">🛠 기본 설정</button>
+      <button class="admin-tab" onclick="aTab(this,'at-ppts')">📋 PPT 목록</button>
+      <button class="admin-tab" onclick="aTab(this,'at-voters')">👥 투표 현황</button>
+      <button class="admin-tab" onclick="aTab(this,'at-danger')">🗑 초기화</button>
+    </div>
+
+    <!-- TAB: 구글 시트 연동 -->
+    <div id="at-gs">
+      <div class="section-box" style="margin-bottom:16px;">
+        <div class="section-title">연결 상태</div>
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+          <span id="conn-status" class="conn-status none">● 미연결</span>
+          <button class="btn btn-ghost btn-sm" onclick="testConnection()">연결 테스트</button>
+        </div>
+        <div id="conn-msg" style="font-size:.83rem;color:var(--text-sub);margin-top:8px;"></div>
+      </div>
+
+      <div class="section-box" style="margin-bottom:16px;">
+        <div class="section-title">Apps Script URL 입력</div>
+        <div class="fg">
+          <label>배포 URL (웹 앱 URL)</label>
+          <input type="url" id="cfg-script-url" placeholder="https://script.google.com/macros/s/...../exec">
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="saveScriptUrl()">저장 및 테스트</button>
+        <span id="url-save-ok" class="save-ok">✓ 저장됨</span>
+      </div>
+
+      <div class="section-box">
+        <div class="section-title">📖 최초 설정 가이드 (처음 한 번만)</div>
+        <div class="guide-steps">
+          <div class="guide-step">
+            <div class="guide-step-num"></div>
+            <div class="guide-step-body">
+              <strong>구글 시트 생성</strong><br>
+              <a href="https://sheets.new" target="_blank" style="color:var(--primary);">sheets.new</a> 에서 새 스프레드시트를 만드세요. 이름은 자유롭게 지정해도 됩니다.
+            </div>
+          </div>
+          <div class="guide-step">
+            <div class="guide-step-num"></div>
+            <div class="guide-step-body">
+              <strong>Apps Script 편집기 열기</strong><br>
+              스프레드시트 상단 메뉴 → <code>확장 프로그램</code> → <code>Apps Script</code> 클릭
+            </div>
+          </div>
+          <div class="guide-step">
+            <div class="guide-step-num"></div>
+            <div class="guide-step-body">
+              <strong>코드 붙여넣기</strong><br>
+              편집기의 기존 코드를 모두 지우고, 함께 제공된 <code>apps_script.gs</code> 파일의 내용을 전체 붙여넣기 후 저장(💾) 클릭
+            </div>
+          </div>
+          <div class="guide-step">
+            <div class="guide-step-num"></div>
+            <div class="guide-step-body">
+              <strong>웹 앱으로 배포</strong><br>
+              오른쪽 상단 <code>배포</code> → <code>새 배포</code> → 유형: <strong>웹 앱</strong><br>
+              • 실행 주체: <strong>나</strong><br>
+              • 액세스 권한: <strong>모든 사용자</strong><br>
+              → <code>배포</code> 클릭 → 권한 허용
+            </div>
+          </div>
+          <div class="guide-step">
+            <div class="guide-step-num"></div>
+            <div class="guide-step-body">
+              <strong>URL 복사 후 위에 붙여넣기</strong><br>
+              배포 완료 후 나타나는 <strong>웹 앱 URL</strong>을 복사해서 위 입력란에 붙여넣고 "저장 및 테스트" 클릭
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: 기본 설정 -->
+    <div id="at-setup" class="hidden">
+      <div class="section-box">
+        <div class="fg">
+          <label>시스템 제목</label>
+          <input type="text" id="cfg-title" placeholder="예: 2025 신입사원 교육 PPT 심사">
+        </div>
+        <div class="fg">
+          <label>투표 마감일시</label>
+          <input type="datetime-local" id="cfg-deadline">
+        </div>
+        <div class="fg">
+          <label>관리자 비밀번호 변경 (변경 시만 입력)</label>
+          <input type="password" id="cfg-new-pw" placeholder="새 비밀번호">
+        </div>
+        <button class="btn btn-primary btn-full" onclick="saveSetup()">저장</button>
+        <span id="setup-save-ok" class="save-ok">✓ 저장됨</span>
+      </div>
+    </div>
+
+    <!-- TAB: PPT 목록 -->
+    <div id="at-ppts" class="hidden">
+      <div class="info-box">
+        💡 구글 드라이브 파일 우클릭 → 공유 → 링크 복사. <strong>"링크가 있는 모든 사용자"</strong>로 설정해야 미리보기 가능. PDF, PPT 모두 지원합니다.
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center;flex-wrap:wrap;">
+        <button class="btn btn-primary btn-sm" onclick="savePPTs()">💾 저장</button>
+        <button class="btn btn-ghost btn-sm" onclick="autoFill()">번호 자동입력</button>
+        <span id="ppt-save-ok" class="save-ok">✓ 저장됨</span>
+      </div>
+      <div class="entry-table">
+        <div class="entry-row hdr">
+          <div>#</div><div>PPT 제목</div><div>발표자</div><div class="url-col">구글 드라이브 링크</div>
+        </div>
+        <div class="entry-scroll" id="ppt-entry-list"></div>
+      </div>
+      <button class="btn btn-primary btn-sm" style="margin-top:12px;" onclick="savePPTs()">💾 저장</button>
+    </div>
+
+    <!-- TAB: 투표 현황 -->
+    <div id="at-voters" class="hidden">
+      <div class="stat-row" id="admin-stats"></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+        <div class="section-title" style="margin:0;">투표자 목록</div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-ghost btn-sm" onclick="loadVoterTab()">🔄 새로고침</button>
+          <button class="btn btn-ghost btn-sm" onclick="exportCSV()">📥 CSV 내보내기</button>
+        </div>
+      </div>
+      <div style="background:white;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.05);">
+        <div class="voter-row hdr"><div>이름</div><div>선택 PPT</div><div>투표 시각</div></div>
+        <div id="voter-list" style="max-height:420px;overflow-y:auto;"></div>
+      </div>
+    </div>
+
+    <!-- TAB: 초기화 -->
+    <div id="at-danger" class="hidden">
+      <div class="section-box">
+        <p style="color:var(--danger);font-weight:700;margin-bottom:14px;">⚠️ 주의 — 되돌릴 수 없습니다</p>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;">
+          <button class="btn btn-danger btn-sm" onclick="resetVotes()">투표 데이터만 초기화</button>
+          <button class="btn btn-danger btn-sm" style="background:#8B0000;" onclick="resetAll()">전체 초기화 (PPT 목록 포함)</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ VOTER LOGIN ═══ -->
+<div id="view-voter-login" class="view">
+  <div class="form-card">
+    <h2>👤 투표자 확인</h2>
+    <div id="voter-login-err" class="alert alert-error hidden"></div>
+    <div id="voter-login-already" class="alert alert-warning hidden"></div>
+    <div class="fg">
+      <label>이름 (본인 이름 입력)</label>
+      <input type="text" id="voter-name-input" placeholder="홍길동" onkeydown="if(event.key==='Enter')voterLogin()">
+    </div>
+    <button class="btn btn-primary btn-full mt-8" onclick="voterLogin()">투표 시작 →</button>
+    <button class="btn btn-ghost btn-sm btn-full" style="margin-top:8px;" onclick="showLanding()">← 돌아가기</button>
+  </div>
+</div>
+
+<!-- ═══ VOTING ═══ -->
+<div id="view-voting" class="view">
+  <div class="voting-wrap">
+    <div class="vote-topbar">
+      <div>
+        <h3>📋 PPT 심사 투표</h3>
+        <p>카드 클릭으로 선택 · 👁 버튼으로 내용 확인</p>
+      </div>
+      <span class="voter-badge" id="voting-user-badge"></span>
+    </div>
+    <div class="voting-grid" id="voting-grid"></div>
+  </div>
+  <div class="vote-bar">
+    <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+      <div class="vote-dots">
+        <div class="vote-dot" id="dot-1">1</div>
+        <div class="vote-dot" id="dot-2">2</div>
+        <div class="vote-dot" id="dot-3">3</div>
+      </div>
+      <span class="vote-txt"><strong id="vote-count">0</strong>/3개 선택됨</span>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center;">
+      <span class="vote-err" id="vote-err"></span>
+      <button class="btn btn-accent" id="btn-submit" onclick="submitVote()" disabled>제출하기</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ THANK YOU ═══ -->
+<div id="view-thankyou" class="view">
+  <div class="ty-card">
+    <div class="ty-icon">✅</div>
+    <h2>투표 완료!</h2>
+    <p style="color:var(--text-sub);margin:8px 0 4px;">소중한 의견 감사합니다.</p>
+    <div class="pick-list" id="ty-picks"></div>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-top:24px;">
+      <button class="btn btn-primary" onclick="showResults()">🏆 실시간 결과 보기</button>
+      <button class="btn btn-ghost btn-sm" onclick="showLanding()">홈으로</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ RESULTS ═══ -->
+<div id="view-results" class="view">
+  <div class="results-wrap">
+    <div class="results-topbar">
+      <h2>🏆 심사 결과</h2>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-ghost btn-sm" onclick="showResults()">🔄 새로고침</button>
+        <button class="btn btn-ghost btn-sm" onclick="showLanding()">← 홈</button>
+      </div>
+    </div>
+    <div class="stat-row" id="results-stats"></div>
+    <div class="section-title">🥇 상위 3위</div>
+    <div class="podium-grid" id="podium-grid"></div>
+    <div class="section-title">전체 순위</div>
+    <div class="rank-list" id="rank-list"></div>
+  </div>
+</div>
+
+<!-- ═══ PREVIEW MODAL ═══ -->
+<div class="modal-bg" id="preview-modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal-box">
+    <div class="modal-hdr">
+      <h3 id="modal-title">미리보기</h3>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-iframe-wrap">
+      <iframe id="modal-iframe" src="about:blank" allowfullscreen></iframe>
+    </div>
+    <div class="modal-ftr">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal()">닫기</button>
+      <button class="btn btn-accent btn-sm" id="modal-sel-btn" onclick="modalToggleSelect()">이 PPT 선택</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ══════════════════════════════════════
+   LOCAL STORAGE (config + PPT entries)
+══════════════════════════════════════ */
+const LKEY = 'ppt_judge_v3';
+const N = 42, PICKS = 3;
+
+const LS = {
+  get()    { try { return JSON.parse(localStorage.getItem(LKEY)) || {}; } catch { return {}; } },
+  set(d)   { localStorage.setItem(LKEY, JSON.stringify(d)); },
+  cfg()    { return this.get().config || { title:'신입사원 PPT 심사', adminPw:'admin1234', deadline:null, ready:false, scriptUrl:'' }; },
+  entries(){
+    const d = this.get();
+    const base = Array.from({length:N},(_,i)=>({id:i+1,title:'',submitter:'',driveUrl:''}));
+    if (d.entries) d.entries.forEach((e,i)=>{ if(i<N) base[i]={...base[i],...e}; });
+    return base;
+  },
+  saveCfg(cfg){ const d=this.get(); d.config=cfg; this.set(d); },
+  saveEntries(e){ const d=this.get(); d.entries=e; this.set(d); },
+};
+
+/* ══════════════════════════════════════
+   API LAYER (Google Sheets via Apps Script)
+   Falls back to localStorage if no scriptUrl
+══════════════════════════════════════ */
+const API = {
+  url(){ return LS.cfg().scriptUrl || ''; },
+
+  async getVotes(){
+    const url = this.url();
+    if (!url) return {};
+    try {
+      const r = await fetch(url + '?t=' + Date.now());
+      const d = await r.json();
+      if (d.ok) return d.votes;
+    } catch(e){ console.warn('GET votes failed', e); }
+    return {};
+  },
+
+  async postVote(voter, picks){
+    const url = this.url();
+    if (!url) return { ok: false, error: 'NO_URL' };
+    try {
+      const r = await fetch(url, {
+        method: 'POST',
+        body: JSON.stringify({ action:'vote', voter, picks }),
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+      });
+      return await r.json();
+    } catch(e){
+      console.warn('POST vote failed', e);
+      return { ok: false, error: e.toString() };
+    }
+  },
+
+  async resetVotes(){
+    const url = this.url();
+    if (!url) return { ok: false, error: 'NO_URL' };
+    try {
+      const r = await fetch(url, {
+        method: 'POST',
+        body: JSON.stringify({ action:'reset' }),
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+      });
+      return await r.json();
+    } catch(e){ return { ok: false, error: e.toString() }; }
+  },
+
+  async test(){
+    const url = this.url();
+    if (!url) return { ok: false, error: 'URL 없음' };
+    try {
+      const r = await fetch(url + '?t=' + Date.now());
+      const d = await r.json();
+      return d.ok ? { ok: true } : { ok: false, error: JSON.stringify(d) };
+    } catch(e){ return { ok: false, error: e.toString() }; }
+  }
+};
+
+/* ══════════════════════════════════════
+   LOADING
+══════════════════════════════════════ */
+function loading(show, msg='잠시만요...'){
+  document.getElementById('loading-overlay').classList.toggle('active', show);
+  document.getElementById('loading-txt').textContent = msg;
+}
+
+/* ══════════════════════════════════════
+   NAVIGATION
+══════════════════════════════════════ */
+let currentVoter = null, currentPreviewId = null;
+let selectedPicks = new Set(), timerRef = null;
+
+function showView(id){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.getElementById('app-header').classList.toggle('hidden', id==='view-landing'||id==='view-admin-login');
+}
+
+function showLanding(){
+  const cfg = LS.cfg();
+  document.getElementById('landing-title').textContent = cfg.title;
+  document.getElementById('header-title').textContent = cfg.title;
+  document.getElementById('landing-not-setup').classList.toggle('hidden', cfg.ready);
+  document.getElementById('btn-go-vote').disabled = !cfg.ready;
+  const dl = cfg.deadline ? new Date(cfg.deadline) : null;
+  const passed = dl && new Date() > dl;
+  document.getElementById('landing-closed').classList.toggle('hidden', !passed);
+  document.getElementById('landing-deadline').textContent = (dl && !passed) ? `마감: ${fmtDate(dl)}` : '';
+  if (!cfg.ready || passed) document.getElementById('btn-go-vote').disabled = true;
+  const alEl = document.getElementById('landing-already-voted');
+  alEl.classList.add('hidden');
+  startCountdown();
+  showView('view-landing');
+}
+
+function showAdminLogin(){
+  document.getElementById('admin-pw-input').value = '';
+  document.getElementById('admin-login-err').classList.add('hidden');
+  showView('view-admin-login');
+}
+
+function adminLogin(){
+  const pw = document.getElementById('admin-pw-input').value;
+  if (pw === LS.cfg().adminPw){ loadAdmin(); showView('view-admin'); }
+  else showEl('admin-login-err','비밀번호가 틀렸습니다.','alert-error');
+}
+
+function goVote(){
+  const cfg = LS.cfg();
+  if (!cfg.ready) return;
+  if (cfg.deadline && new Date() > new Date(cfg.deadline)){ alert('투표 기간이 종료되었습니다.'); return; }
+  document.getElementById('voter-name-input').value = '';
+  document.getElementById('voter-login-err').classList.add('hidden');
+  document.getElementById('voter-login-already').classList.add('hidden');
+  showView('view-voter-login');
+}
+
+async function voterLogin(){
+  const name = document.getElementById('voter-name-input').value.trim();
+  if (!name){ showEl('voter-login-err','이름을 입력해주세요.','alert-error'); return; }
+  loading(true, '확인 중...');
+  const votes = await API.getVotes();
+  loading(false);
+  if (votes[name]){
+    document.getElementById('voter-login-already').classList.remove('hidden');
+    document.getElementById('voter-login-already').textContent = `이미 "${name}"님의 투표가 등록되어 있습니다.`;
+    return;
+  }
+  currentVoter = name;
+  loadVotingGrid();
+  showView('view-voting');
+}
+
+async function showResults(){ loadResults(); showView('view-results'); }
+
+/* ══════════════════════════════════════
+   ADMIN
+══════════════════════════════════════ */
+function aTab(btn, id){
+  document.querySelectorAll('.admin-tab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  ['at-gs','at-setup','at-ppts','at-voters','at-danger'].forEach(t=>document.getElementById(t).classList.add('hidden'));
+  document.getElementById(id).classList.remove('hidden');
+  if (id==='at-voters') loadVoterTab();
+}
+
+function loadAdmin(){
+  const cfg = LS.cfg();
+  document.getElementById('cfg-title').value = cfg.title || '';
+  document.getElementById('cfg-script-url').value = cfg.scriptUrl || '';
+  if (cfg.deadline) document.getElementById('cfg-deadline').value = cfg.deadline.slice(0,16);
+  else { const d=new Date(); d.setDate(d.getDate()+7); document.getElementById('cfg-deadline').value=d.toISOString().slice(0,16); }
+  document.getElementById('cfg-new-pw').value = '';
+  updateConnStatus(cfg.scriptUrl ? 'none' : 'none');
+  loadPPTList();
+}
+
+function updateConnStatus(state, msg=''){
+  const el = document.getElementById('conn-status');
+  const msgEl = document.getElementById('conn-msg');
+  el.className = `conn-status ${state}`;
+  el.textContent = state==='ok' ? '● 연결됨' : state==='fail' ? '● 연결 실패' : '● 미테스트';
+  msgEl.textContent = msg;
+}
+
+async function testConnection(){
+  loading(true,'연결 테스트 중...');
+  const res = await API.test();
+  loading(false);
+  if (res.ok) updateConnStatus('ok','구글 시트에 정상적으로 연결되었습니다.');
+  else updateConnStatus('fail', `오류: ${res.error}`);
+}
+
+function saveScriptUrl(){
+  const url = document.getElementById('cfg-script-url').value.trim();
+  const cfg = LS.cfg();
+  cfg.scriptUrl = url;
+  LS.saveCfg(cfg);
+  blinkSave('url-save-ok');
+  if (url) testConnection();
+}
+
+function saveSetup(){
+  const cfg = LS.cfg();
+  cfg.title = document.getElementById('cfg-title').value.trim() || '신입사원 PPT 심사';
+  const dl = document.getElementById('cfg-deadline').value;
+  cfg.deadline = dl ? new Date(dl).toISOString() : null;
+  const np = document.getElementById('cfg-new-pw').value;
+  if (np) cfg.adminPw = np;
+  if (!cfg.adminPw) cfg.adminPw = 'admin1234';
+  cfg.ready = true;
+  LS.saveCfg(cfg);
+  blinkSave('setup-save-ok');
+}
+
+function loadPPTList(){
+  const entries = LS.entries();
+  document.getElementById('ppt-entry-list').innerHTML = entries.map((e,i)=>`
+    <div class="entry-row">
+      <div style="font-weight:700;color:var(--text-sub);font-size:.82rem;">${i+1}</div>
+      <input type="text" value="${esc(e.title)}" placeholder="PPT 제목" data-i="${i}" data-f="title">
+      <input type="text" value="${esc(e.submitter)}" placeholder="발표자" data-i="${i}" data-f="submitter">
+      <input type="url" value="${esc(e.driveUrl)}" placeholder="구글 드라이브 링크" data-i="${i}" data-f="driveUrl" class="url-col">
+    </div>`).join('');
+}
+
+function savePPTs(){
+  const entries = LS.entries();
+  document.querySelectorAll('#ppt-entry-list input').forEach(inp=>{
+    entries[+inp.dataset.i][inp.dataset.f] = inp.value.trim();
+  });
+  LS.saveEntries(entries);
+  blinkSave('ppt-save-ok');
+}
+
+function autoFill(){
+  document.querySelectorAll('#ppt-entry-list input[data-f="title"]').forEach((inp,i)=>{
+    if (!inp.value) inp.value = `PPT ${i+1}번`;
+  });
+}
+
+async function loadVoterTab(){
+  loading(true,'투표 현황 불러오는 중...');
+  const votes = await API.getVotes();
+  loading(false);
+  const entries = LS.entries();
+  const names = Object.keys(votes);
+  document.getElementById('admin-stats').innerHTML = `
+    <div class="stat-box"><div class="stat-val">${names.length}</div><div class="stat-lbl">참여자 수</div></div>
+    <div class="stat-box"><div class="stat-val">${names.length*PICKS}</div><div class="stat-lbl">총 투표 수</div></div>`;
+  const list = document.getElementById('voter-list');
+  if (!names.length){ list.innerHTML='<div style="text-align:center;padding:32px;color:#aaa;">아직 투표자가 없습니다</div>'; return; }
+  list.innerHTML = names.sort().map(n=>{
+    const v = votes[n];
+    const picks = v.picks.map(id=>{ const e=entries.find(e=>e.id===id); return `${id}번 ${e?e.title||'':''}`; }).join(', ');
+    return `<div class="voter-row"><div><strong>${esc(n)}</strong></div><div style="font-size:.83rem;">${esc(picks)}</div><div style="font-size:.75rem;color:var(--text-sub);">${new Date(v.ts).toLocaleString('ko-KR')}</div></div>`;
+  }).join('');
+}
+
+async function exportCSV(){
+  loading(true,'데이터 불러오는 중...');
+  const votes = await API.getVotes();
+  loading(false);
+  const entries = LS.entries();
+  let csv = '﻿이름,선택1,선택2,선택3,투표시각\n';
+  Object.entries(votes).forEach(([n,v])=>{
+    const picks = v.picks.map(id=>{ const e=entries.find(e=>e.id===id); return `"${e?e.title||id:id}"`; });
+    while(picks.length<3) picks.push('""');
+    csv += `"${n}",${picks.join(',')},${v.ts}\n`;
+  });
+  const blob = new Blob([csv],{type:'text/csv;charset=utf-8'});
+  Object.assign(document.createElement('a'),{href:URL.createObjectURL(blob),download:'PPT심사_결과.csv'}).click();
+}
+
+async function resetVotes(){
+  if (!confirm('구글 시트의 투표 데이터를 모두 삭제하시겠습니까?')) return;
+  loading(true,'초기화 중...');
+  const res = await API.resetVotes();
+  loading(false);
+  if (res.ok) alert('투표 데이터가 초기화되었습니다.');
+  else alert('오류: ' + res.error);
+}
+
+function resetAll(){
+  if (!confirm('PPT 목록과 모든 로컬 설정을 초기화합니까?\n(구글 시트 데이터는 별도 삭제 필요)')) return;
+  localStorage.removeItem(LKEY); showLanding();
+}
+
+/* ══════════════════════════════════════
+   VOTING
+══════════════════════════════════════ */
+function loadVotingGrid(){
+  selectedPicks = new Set();
+  const entries = LS.entries();
+  document.getElementById('voting-user-badge').textContent = `${currentVoter}님`;
+  document.getElementById('voting-grid').innerHTML = entries.map(e=>`
+    <div class="ppt-card" id="card-${e.id}" onclick="togglePick(${e.id})">
+      <div class="card-check" id="ck-${e.id}">✓</div>
+      <div class="card-num">No. ${e.id}</div>
+      <div class="card-title">${esc(e.title||`PPT ${e.id}번`)}</div>
+      <div class="card-submitter">${esc(e.submitter||' ')}</div>
+      <div class="card-actions" onclick="event.stopPropagation()">
+        ${e.driveUrl
+          ? `<button class="card-preview-btn" onclick="openPreview(${e.id})">👁 미리보기</button>`
+          : `<span style="font-size:.75rem;color:#ccc;">링크 없음</span>`}
+      </div>
+    </div>`).join('');
+  updateVoteBar();
+}
+
+function togglePick(id){
+  if (selectedPicks.has(id)){ selectedPicks.delete(id); }
+  else {
+    if (selectedPicks.size >= PICKS){
+      const e=document.getElementById('vote-err'); e.textContent='최대 3개까지 선택 가능합니다.';
+      setTimeout(()=>{ e.textContent=''; },1800); return;
+    }
+    selectedPicks.add(id);
+  }
+  updateVoteBar(); renderCards();
+}
+
+function renderCards(){
+  const full = selectedPicks.size >= PICKS;
+  LS.entries().forEach(e=>{
+    const card=document.getElementById(`card-${e.id}`);
+    const ck=document.getElementById(`ck-${e.id}`);
+    if (!card) return;
+    const sel = selectedPicks.has(e.id);
+    card.classList.toggle('selected',sel);
+    card.classList.toggle('dimmed',full&&!sel);
+    ck.style.display = sel ? 'flex' : 'none';
+  });
+  if (currentPreviewId) updateModalBtn();
+}
+
+function updateVoteBar(){
+  const n=selectedPicks.size;
+  document.getElementById('vote-count').textContent=n;
+  document.getElementById('btn-submit').disabled=n!==PICKS;
+  const arr=[...selectedPicks];
+  for(let i=1;i<=PICKS;i++){
+    const dot=document.getElementById(`dot-${i}`);
+    dot.classList.toggle('filled',i<=n);
+    dot.textContent=i<=n?arr[i-1]:i;
+  }
+}
+
+async function submitVote(){
+  if (selectedPicks.size!==PICKS) return;
+  if (!confirm(`선택한 ${PICKS}개 PPT로 투표하시겠습니까?\n제출 후 변경할 수 없습니다.`)) return;
+  const picks=[...selectedPicks];
+  loading(true,'투표 제출 중...');
+  const res = await API.postVote(currentVoter, picks);
+  loading(false);
+  if (!res.ok){
+    if (res.error==='DUPLICATE') alert('이미 투표가 등록되어 있습니다.');
+    else alert('오류가 발생했습니다: ' + res.error);
+    return;
+  }
+  // Thank you
+  const entries = LS.entries();
+  document.getElementById('ty-picks').innerHTML = picks.map(id=>{
+    const e=entries.find(e=>e.id===id);
+    return `<div class="pick-item">✓ No.${id} ${esc(e?e.title||'':'')}${e&&e.submitter?` <span style="color:var(--text-sub);font-weight:400;">— ${esc(e.submitter)}</span>`:''}`;
+  }).join('');
+  showView('view-thankyou');
+}
+
+/* ══════════════════════════════════════
+   PREVIEW MODAL
+══════════════════════════════════════ */
+function embedUrl(url){
+  if (!url) return '';
+  let m=url.match(/\/file\/d\/([^\/\?#]+)/);
+  if (m) return `https://drive.google.com/file/d/${m[1]}/preview`;
+  m=url.match(/\/presentation\/d\/([^\/\?#]+)/);
+  if (m) return `https://docs.google.com/presentation/d/${m[1]}/embed?start=false&loop=false`;
+  return url;
+}
+
+function openPreview(id){
+  const e=LS.entries().find(e=>e.id===id); if (!e) return;
+  currentPreviewId=id;
+  document.getElementById('modal-title').textContent=`No.${id} ${e.title||'제목없음'}${e.submitter?' — '+e.submitter:''}`;
+  document.getElementById('modal-iframe').src=embedUrl(e.driveUrl)||'about:blank';
+  updateModalBtn();
+  document.getElementById('preview-modal').classList.add('active');
+}
+
+function updateModalBtn(){
+  const btn=document.getElementById('modal-sel-btn');
+  const sel=selectedPicks.has(currentPreviewId);
+  btn.textContent=sel?'✓ 선택 취소':'이 PPT 선택';
+  btn.style.background=sel?'#888':'';
+}
+
+function modalToggleSelect(){ togglePick(currentPreviewId); }
+
+function closeModal(){
+  document.getElementById('preview-modal').classList.remove('active');
+  document.getElementById('modal-iframe').src='about:blank';
+  currentPreviewId=null;
+}
+
+/* ══════════════════════════════════════
+   RESULTS
+══════════════════════════════════════ */
+async function loadResults(){
+  loading(true,'결과 불러오는 중...');
+  const votes = await API.getVotes();
+  loading(false);
+  const entries = LS.entries();
+  const tally={};
+  entries.forEach(e=>{ tally[e.id]=0; });
+  Object.values(votes).forEach(v=>v.picks.forEach(id=>{ if(tally[id]!==undefined) tally[id]++; }));
+  const sorted=entries.map(e=>({...e,v:tally[e.id]||0})).sort((a,b)=>b.v-a.v);
+  const maxV=sorted[0]?.v||1, total=Object.keys(votes).length;
+
+  document.getElementById('results-stats').innerHTML=`
+    <div class="stat-box"><div class="stat-val">${total}</div><div class="stat-lbl">참여자 수</div></div>
+    <div class="stat-box"><div class="stat-val">${total*PICKS}</div><div class="stat-lbl">총 투표 수</div></div>
+    <div class="stat-box"><div class="stat-val">${sorted.filter(e=>e.v>0).length}</div><div class="stat-lbl">득표 작품 수</div></div>`;
+
+  const medals=['🥇','🥈','🥉'], mCls=['gold','silver','bronze'];
+  const top3=sorted.slice(0,3);
+  const order=top3.length>=3?[1,0,2]:top3.map((_,i)=>i);
+  document.getElementById('podium-grid').innerHTML=order.map(ri=>{
+    const e=top3[ri];
+    if (!e) return `<div class="podium-card"><div class="podium-medal" style="opacity:.3">${medals[ri]}</div><div class="podium-title" style="color:var(--text-sub);font-weight:400;">—</div></div>`;
+    return `<div class="podium-card ${mCls[ri]}">
+      <div class="podium-medal">${medals[ri]}</div>
+      <div class="podium-num">No. ${e.id}</div>
+      <div class="podium-title">${esc(e.title||`PPT ${e.id}번`)}</div>
+      ${e.submitter?`<div class="podium-sub">${esc(e.submitter)}</div>`:''}
+      <div class="podium-votes">${e.v}<span> 표</span></div>
+    </div>`;
+  }).join('');
+
+  const withVotes=sorted.filter(e=>e.v>0);
+  document.getElementById('rank-list').innerHTML=withVotes.length===0
+    ?'<div style="text-align:center;padding:32px;color:#aaa;">아직 투표가 없습니다</div>'
+    :withVotes.map((e,i)=>`
+      <div class="rank-item">
+        <div class="rank-num">${i<3?medals[i]:i+1}</div>
+        <div>
+          <div class="rank-title">No.${e.id} ${esc(e.title||`PPT ${e.id}번`)}${e.submitter?` <span style="font-weight:400;color:var(--text-sub);">· ${esc(e.submitter)}</span>`:''}</div>
+          <div class="rank-bar-bg"><div class="rank-bar-fill" style="width:${(e.v/maxV*100).toFixed(1)}%"></div></div>
+        </div>
+        <div class="rank-votes">${e.v}표</div>
+      </div>`).join('');
+}
+
+/* ══════════════════════════════════════
+   COUNTDOWN
+══════════════════════════════════════ */
+function startCountdown(){
+  if (timerRef) clearInterval(timerRef);
+  const cfg=LS.cfg();
+  const el=document.getElementById('hdr-countdown');
+  if (!cfg.deadline){ el.classList.add('hidden'); return; }
+  el.classList.remove('hidden');
+  const update=()=>{
+    const diff=new Date(cfg.deadline)-new Date();
+    if (diff<=0){ el.textContent='⏰ 마감'; clearInterval(timerRef); return; }
+    const d=Math.floor(diff/86400000),h=Math.floor(diff%86400000/3600000),m=Math.floor(diff%3600000/60000),s=Math.floor(diff%60000/1000);
+    el.textContent=d>0?`⏱ ${d}일 ${h}시간 ${m}분`:`⏱ ${h}시간 ${m}분 ${s}초`;
+  };
+  update(); timerRef=setInterval(update,1000);
+}
+
+/* ══════════════════════════════════════
+   UTIL
+══════════════════════════════════════ */
+function esc(s){ if(!s)return''; return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function fmtDate(d){ return d.toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric',weekday:'short',hour:'2-digit',minute:'2-digit'}); }
+function showEl(id,msg,cls){ const el=document.getElementById(id); el.textContent=msg; el.className=`alert ${cls}`; el.classList.remove('hidden'); }
+function blinkSave(id){ const el=document.getElementById(id); el.classList.add('show'); setTimeout(()=>el.classList.remove('show'),2000); }
+
+window.addEventListener('DOMContentLoaded', ()=>{ showLanding(); });
+</script>
+</body>
+</html>
