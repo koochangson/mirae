@@ -233,13 +233,16 @@ body { font-family: 'Malgun Gothic','Apple SD Gothic Neo',-apple-system,sans-ser
     <p class="landing-deadline" id="landing-deadline"></p>
     <div class="landing-btns">
       <button class="btn btn-primary" id="btn-go-vote" onclick="goVote()">📋 투표하기</button>
-      <button class="btn" style="background:transparent;border:1.5px solid #ccc;color:#999;font-size:.82rem;" onclick="showAdminLogin()">⚙️ 관리자</button>
+
     </div>
     <div id="landing-not-setup" class="alert alert-info" style="max-width:380px;margin:0 auto;">
       ⚠️ 아직 설정이 완료되지 않았습니다. 관리자 메뉴에서 먼저 설정해주세요.
     </div>
     <div id="landing-already-voted" class="alert alert-success hidden" style="max-width:380px;margin:8px auto 0;"></div>
     <div id="landing-closed" class="alert alert-warning hidden" style="max-width:380px;margin:8px auto 0;">⏰ 투표 기간이 종료되었습니다.</div>
+  </div>
+  <div style="position:fixed;bottom:6px;right:10px;">
+    <span onclick="showAdminLogin()" style="font-size:.65rem;color:#ddd;cursor:pointer;user-select:none;">v1.0</span>
   </div>
 </div>
 
@@ -516,7 +519,7 @@ body { font-family: 'Malgun Gothic','Apple SD Gothic Neo',-apple-system,sans-ser
 ══════════════════════════════════════ */
 const LKEY = 'ppt_judge_v3';
 const N = 42, PICKS = 3;
-const DEFAULT_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxm1E1VBrcbAkMLpkSa9s0ARLmRP6yn2oe73hec_Vkyu49vsXH5Mg2JYJoQb1tR3SeZ/exec'.replace(/\s+/g, '');
+const DEFAULT_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyUvHiuR3eZrOTOQjvd39bwJAiqAK5kSX3lE048lEyez7dhCEZJbHU1PpsvEB7bzmWs/exec'.replace(/\s+/g, '');
 const DEFAULT_CFG = { title:'신입사원 PPT 심사', adminPw:'admin1234', deadline:null, ready:false, scriptUrl:DEFAULT_SCRIPT_URL };
 
 const LS = {
@@ -1042,6 +1045,7 @@ async function loadResults(){
   entries.forEach(e=>{ tally[e.id]=0; });
   Object.values(votes).forEach(v=>v.picks.forEach(id=>{ if(tally[id]!==undefined) tally[id]++; }));
   const sorted=entries.map(e=>({...e,v:tally[e.id]||0})).sort((a,b)=>b.v-a.v);
+  const byOrder=entries.map(e=>({...e,v:tally[e.id]||0}));  // 목록 순서 유지
   const maxV=sorted[0]?.v||1, total=Object.keys(votes).length;
 
   document.getElementById('results-stats').innerHTML=`
@@ -1058,23 +1062,23 @@ async function loadResults(){
     return `<div class="podium-card ${mCls[ri]}">
       <div class="podium-medal">${medals[ri]}</div>
       <div class="podium-num">No. ${e.id}</div>
-      <div class="podium-title">${esc(e.title||`PPT ${e.id}번`)}</div>
-      ${e.submitter?`<div class="podium-sub">${esc(e.submitter)}</div>`:''}
+      <div class="podium-title">${esc(e.submitter||`발표자 ${e.id}`)}</div>
       <div class="podium-votes">${e.v}<span> 표</span></div>
     </div>`;
   }).join('');
 
-  const withVotes=sorted.filter(e=>e.v>0);
-  document.getElementById('rank-list').innerHTML=withVotes.length===0
-    ?'<div style="text-align:center;padding:32px;color:#aaa;">아직 투표가 없습니다</div>'
-    :withVotes.map((e,i)=>`
+  // PPT 목록 순서대로 전체 표시 (0표 포함)
+  const allEntries=byOrder.filter(e=>e.submitter||e.title);
+  document.getElementById('rank-list').innerHTML=allEntries.length===0
+    ?'<div style="text-align:center;padding:32px;color:#aaa;">PPT 목록이 없습니다</div>'
+    :allEntries.map(e=>`
       <div class="rank-item">
-        <div class="rank-num">${i<3?medals[i]:i+1}</div>
+        <div class="rank-num" style="font-size:.85rem;color:var(--text-sub);">${e.id}</div>
         <div>
-          <div class="rank-title">No.${e.id} ${esc(e.title||`PPT ${e.id}번`)}${e.submitter?` <span style="font-weight:400;color:var(--text-sub);">· ${esc(e.submitter)}</span>`:''}</div>
-          <div class="rank-bar-bg"><div class="rank-bar-fill" style="width:${(e.v/maxV*100).toFixed(1)}%"></div></div>
+          <div class="rank-title">${esc(e.submitter||`발표자 ${e.id}`)}</div>
+          <div class="rank-bar-bg"><div class="rank-bar-fill" style="width:${maxV>0?(e.v/maxV*100).toFixed(1):0}%"></div></div>
         </div>
-        <div class="rank-votes">${e.v}표</div>
+        <div class="rank-votes" style="color:${e.v>0?'var(--primary)':'#ccc'};">${e.v}표</div>
       </div>`).join('');
 }
 
