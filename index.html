@@ -549,110 +549,103 @@ function normalizeEntries(entries){
 }
 
 /* ══════════════════════════════════════
-   API LAYER (Google Sheets via Apps Script)
-   Falls back to localStorage if no scriptUrl
+   API LAYER — JSONP (CORS 우회)
+   GET 읽기/투표/초기화 → JSONP 스크립트 태그
+   POST 쓰기(설정·폴더) → no-cors fetch + JSONP 검증
 ══════════════════════════════════════ */
 const API = {
   url(){ return LS.cfg().scriptUrl || ''; },
 
+  /* ── JSONP 헬퍼 ── */
+  _jsonp(qs){
+    return new Promise((resolve, reject) => {
+      const cb  = 'gs_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+      const s   = document.createElement('script');
+      const tid = setTimeout(() => { cleanup(); reject(new Error('timeout')); }, 12000);
+      const cleanup = () => { clearTimeout(tid); delete window[cb]; s.remove(); };
+      window[cb] = (d) => { cleanup(); resolve(d); };
+      s.onerror  = () => { cleanup(); reject(new Error('load failed')); };
+      s.src = this.url() + '?' + qs + '&callback=' + cb + '&t=' + Date.now();
+      document.head.appendChild(s);
+    });
+  },
+
+  /* ── 설정 읽기 ── */
   async getSettings(){
-    const url = this.url();
-    if (!url) return { ok: false, error: 'NO_URL' };
+    if (!this.url()) return { ok: false, error: 'NO_URL' };
     try {
-      const r = await fetch(url + '?action=settings&t=' + Date.now());
-      const d = await r.json();
+      const d = await this._jsonp('action=settings');
       if (d.ok) LS.applyRemote(d);
       return d;
-    } catch(e){
-      console.warn('GET settings failed', e);
-      return { ok: false, error: e.toString() };
-    }
+    } catch(e){ console.warn('GET settings failed', e); return { ok: false, error: e.toString() }; }
   },
 
-  async saveSettings(cfg, entries){
-    const url = this.url();
-    if (!url) return { ok: false, error: 'NO_URL' };
-    try {
-      const r = await fetch(url, {
-        method: 'POST',
-        body: JSON.stringify({ action:'settings', config: cfg, entries }),
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' }
-      });
-      const d = await r.json();
-      if (d.ok) LS.applyRemote(d);
-      return d;
-    } catch(e){
-      console.warn('SAVE settings failed', e);
-      return { ok: false, error: e.toString() };
-    }
-  },
-
-  async importFolder(folderUrl){
-    const url = this.url();
-    if (!url) return { ok: false, error: 'NO_URL' };
-    try {
-      const r = await fetch(url, {
-        method: 'POST',
-        body: JSON.stringify({ action:'importFolder', folderUrl }),
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' }
-      });
-      const d = await r.json();
-      if (d.ok) LS.applyRemote(d);
-      return d;
-    } catch(e){
-      console.warn('IMPORT folder failed', e);
-      return { ok: false, error: e.toString() };
-    }
-  },
-
+  /* ── 투표 현황 읽기 ── */
   async getVotes(){
-    const url = this.url();
-    if (!url) return {};
+    if (!this.url()) return {};
     try {
-      const r = await fetch(url + '?t=' + Date.now());
-      const d = await r.json();
+      const d = await this._jsonp('');
       if (d.ok) LS.applyRemote(d);
-      if (d.ok) return d.votes;
+      if (d.ok) return d.votes || {};
     } catch(e){ console.warn('GET votes failed', e); }
     return {};
   },
 
-  async postVote(voter, picks){
-    const url = this.url();
-    if (!url) return { ok: false, error: 'NO_URL' };
+  /* ── 연결 테스트 ── */
+  async test(){
+    if (!this.url()) return { ok: false, error: 'URL 없음' };
     try {
-      const r = await fetch(url, {
-        method: 'POST',
-        body: JSON.stringify({ action:'vote', voter, picks }),
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' }
-      });
-      return await r.json();
-    } catch(e){
-      console.warn('POST vote failed', e);
-      return { ok: false, error: e.toString() };
-    }
-  },
-
-  async resetVotes(){
-    const url = this.url();
-    if (!url) return { ok: false, error: 'NO_URL' };
-    try {
-      const r = await fetch(url, {
-        method: 'POST',
-        body: JSON.stringify({ action:'reset' }),
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' }
-      });
-      return await r.json();
+      const d = await this._jsonp('');
+      return d.ok ? { ok: true } : { ok: false, error: JSON.stringify(d) };
     } catch(e){ return { ok: false, error: e.toString() }; }
   },
 
-  async test(){
-    const url = this.url();
-    if (!url) return { ok: false, error: 'URL 없음' };
+  /* ── 투표 제출 (JSONP GET, 소량 파라미터) ── */
+  async postVote(voter, picks){
+    if (!this.url()) return { ok: false, error: 'NO_URL' };
     try {
-      const r = await fetch(url + '?t=' + Date.now());
-      const d = await r.json();
-      return d.ok ? { ok: true } : { ok: false, error: JSON.stringify(d) };
+      return await this._jsonp('action=vote&voter=' + encodeURIComponent(voter) + '&picks=' + picks.join(','));
+    } catch(e){ return { ok: false, error: e.toString() }; }
+  },
+
+  /* ── 투표 초기화 (JSONP GET) ── */
+  async resetVotes(){
+    if (!this.url()) return { ok: false, error: 'NO_URL' };
+    try {
+      return await this._jsonp('action=reset');
+    } catch(e){ return { ok: false, error: e.toString() }; }
+  },
+
+  /* ── 설정 저장 (no-cors POST → JSONP 검증) ── */
+  async saveSettings(cfg, entries){
+    if (!this.url()) return { ok: false, error: 'NO_URL' };
+    try {
+      await fetch(this.url(), {
+        method: 'POST', mode: 'no-cors',
+        body: JSON.stringify({ action:'settings', config: cfg, entries }),
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+      });
+      await new Promise(r => setTimeout(r, 900));
+      const verify = await this.getSettings();
+      return verify.ok ? { ok: true } : { ok: false, error: '저장 후 확인 실패' };
+    } catch(e){ return { ok: false, error: e.toString() }; }
+  },
+
+  /* ── 드라이브 폴더 가져오기 (no-cors POST → JSONP 검증) ── */
+  async importFolder(folderUrl){
+    if (!this.url()) return { ok: false, error: 'NO_URL' };
+    try {
+      await fetch(this.url(), {
+        method: 'POST', mode: 'no-cors',
+        body: JSON.stringify({ action:'importFolder', folderUrl }),
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+      });
+      await new Promise(r => setTimeout(r, 1800));
+      const verify = await this.getSettings();
+      if (verify.ok && verify.entries) {
+        return { ok: true, imported: (verify.entries || []).filter(e => e.title).length };
+      }
+      return { ok: false, error: '폴더 가져오기 후 확인 실패' };
     } catch(e){ return { ok: false, error: e.toString() }; }
   }
 };
