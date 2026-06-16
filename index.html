@@ -561,7 +561,7 @@ body { font-family: 'Malgun Gothic','Apple SD Gothic Neo',-apple-system,sans-ser
 ══════════════════════════════════════ */
 const LKEY = 'ppt_judge_v3';
 const N = 42, PICKS = 3;
-const DEFAULT_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxm1E1VBrcbAkMLpkSa9s0ARLmRP6yn2oe73hec_Vkyu49vsXH5Mg2JYJoQb1tR3SeZ/exec'.replace(/\s+/g, '');
+const DEFAULT_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyUvHiuR3eZrOT0Qjvd39bwJAiqAK5kSX3lE048lEyze7dhCEZJbHU1PpsvEB7bzmWs/exec'.replace(/\s+/g, '');
 const DEFAULT_CFG = { title:'신입사원 PPT 심사', adminPw:'admin1234', deadline:null, ready:false, scriptUrl:DEFAULT_SCRIPT_URL };
 
 const LS = {
@@ -1158,7 +1158,10 @@ async function initApp(){
   loading(true, '구글시트 설정 불러오는 중...');
   await API.getSettings();
   loading(false);
-  showLanding();
+  // 사용자가 이미 다른 화면으로 이동했으면 랜딩으로 덮어쓰지 않음
+  if (document.getElementById('view-landing').classList.contains('active')) {
+    showLanding();
+  }
 }
 
 window.addEventListener('DOMContentLoaded', initApp);
